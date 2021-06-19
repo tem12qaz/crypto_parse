@@ -1,43 +1,89 @@
-import aiohttp
+import asyncio
 from fake_useragent import UserAgent
-from bs4 import BeautifulSoup as bs4
 
-from db import Url
+from pyvirtualdisplay import Display
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+from selenium_stealth import stealth
+
 
 user_agent = UserAgent()
 
 
-async def get_data(url: Url):
-    async with aiohttp.ClientSession() as session:
-        response = await session.get(
-            url.url,
-            headers={'User-Agent': user_agent.random}
-        )
-        result = await response.text()
+def get_selen(proxy=False):
+    # display = Display(visible=0, size=(640, 480))
+    # display.start()
 
-    soup = bs4(result, 'html.parser')
-    size_div = soup.find('div', class_="product-size-selector__size-list-wrapper")
+    ua = UserAgent()
+    options = webdriver.ChromeOptions()
 
-    size_list = size_div.find_all('product-size-selector__size-list-item')
-    out_of_stock_size_list = size_div.find_all('product-size-selector__size-list-item--out-of-stock')
-    size_list = size_list - out_of_stock_size_list
+    if proxy:
+        # new_connection()
+        options.add_argument('--proxy-server=socks5://localhost:9050')
 
-    name = soup.find("h1", class_="product-detail-info__name").text
-    num = soup.find("p", class_="product-detail-selected-color").text.split('|')[1].replace(' ', '')
+    options.add_argument("--disable-blink-features")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+    options.add_argument("start-maximized")
 
-    if size_list is None:
-        data = (name, num)
-        return data
+    driver = webdriver.Chrome(
+        # executable_path="/home/ubuntu/code/parse/project_parse/chromedriver",
+        executable_path=r"C:\Users\Matvey\Desktop\crypto_parse\chromedriver.exe",
+        options=options
+    )
 
-    size_text = ''
-    for size in size_list:
-        size_text += size.find("span", class_="product-size-info__main-label")
-        if size != size_list[-1]:
-            size_text += ', '
+    # driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
-    data = (name, num, size_text)
+    # driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+    #     "source": """
+    #     Object.defineProperty(navigator, 'webdriver', {
+    #       get: () => undefined
+    #     })
+    #   """
+    # })
 
-    return data
+    # driver.execute_cdp_cmd(
+    #    'Network.setUserAgentOverride',
+    #    {"userAgent": user_agent.random}
+    # )
+
+    stealth(
+        driver,
+        languages=["en-US", "en"],
+        vendor="Google Inc.",
+        platform="Win32",
+        webgl_vendor="Intel Inc.",
+        renderer="Intel Iris OpenGL Engine",
+        fix_hairline=True,
+    )
+    return driver
+
+
+async def parse(id_, proxy=False):
+    driver = get_selen(proxy)
+    driver.get(f'https://raydium.io/swap/?ammId={id_}')
+    await asyncio.sleep(2)
+    driver.find_element_by_class_name('coin-input').find_element_by_tag_name('input').send_keys(1)
+    err = 0
+    await asyncio.sleep(2)
+    while True:
+        try:
+            price = float(driver.find_element_by_class_name('price-base').text.split('≈ ')[1].split(' ')[0])
+        except NoSuchElementException:
+            print('x')
+            if err == 5:
+                price = None
+                break
+            err += 1
+            await asyncio.sleep(2)
+        else:
+            break
+    return price
+
+
+
+
 
 
 

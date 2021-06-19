@@ -5,9 +5,8 @@ from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils.executor import start_webhook
 from config import API_TOKEN, WEBHOOK_HOST, WEBHOOK_PATH, WEBAPP_PORT, admins
-from db import db_init, Url
 from logger_config import logger_config
-from parse import get_data
+from parse import parse
 
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 WEBAPP_HOST = 'localhost'
@@ -24,6 +23,8 @@ waiting_time = []
 
 available_products = []
 sleep_time = 2
+
+id_ = 'AsA4HchyP9ksD9Rw7iAEdVa9hxD47RtNx1ETuySbAxdo'
 
 
 def del_actions(tg_id):
@@ -53,28 +54,11 @@ async def send_info(data):
 
 async def parse_cycle():
     while True:
-        urls = await Url.all()
-        for url in urls:
-            try:
-                data = await get_data(url)
-            except Exception as ex:
-                print(ex)
-                logger.exception(ex)
-                continue
-
-            if len(data) == 2:
-                if url in available_products:
-                    available_products.remove(url.url)
-
-            elif len(data) == 3:
-                if url not in available_products:
-                    available_products.append(url.url)
-                    data.append(url.url)
-            else:
-                continue
-
-            await send_info(data)
-            await asyncio.sleep(sleep_time)
+        price = await parse(id_)
+        if price:
+            print(price)
+        print('-----------')
+        await asyncio.sleep(5)
 
 
 @dp.message_handler(commands=['start'])
@@ -190,10 +174,9 @@ async def listen_url(message: types.Message):
     del_actions(message.from_user.id)
 
 
-
 async def on_startup(dp):
-    await db_init()
     await bot.set_webhook(WEBHOOK_URL)
+    await parse_cycle()
 
 
 async def on_shutdown(dp):

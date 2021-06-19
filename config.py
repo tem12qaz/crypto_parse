@@ -1,5 +1,5 @@
-API_TOKEN = ''
-WEBHOOK_HOST = ''
+API_TOKEN = '1671620851:AAHOuyZP6sAZ1z_bT5FQYWhauiVLcCAFsrw'
+WEBHOOK_HOST = '4roonas.ru'
 WEBAPP_PORT = 8080
 admins = []
 
