@@ -1,7 +1,7 @@
 import asyncio
 from fake_useragent import UserAgent
 
-from pyvirtualdisplay import Display
+# from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium_stealth import stealth
