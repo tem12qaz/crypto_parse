@@ -1,15 +1,10 @@
-API_TOKEN = '1671620851:AAHOuyZP6sAZ1z_bT5FQYWhauiVLcCAFsrw'
-WEBHOOK_HOST = '4roonas.ru'
+API_TOKEN = '1640129435:AAGF_CIvdiSH7SnaemQT9bLaXZvem5c2300'
+WEBHOOK_HOST = 'https://9f637da4ac71.ngrok.io'
 WEBAPP_PORT = 8080
-admins = []
+admins = [772311962]
 
-PG_USER = ''
-PG_HOST = ''
-PG_PASSWORD = ''
-PG_DATABASE = ''
-database_uri = f'postgres://{PG_USER}:{PG_PASSWORD}@{PG_HOST}/{PG_DATABASE}'
 
-WEBHOOK_PATH = f'/bots/{API_TOKEN}/{WEBAPP_PORT}'
+WEBHOOK_PATH = f'/rtg'
 
 
 

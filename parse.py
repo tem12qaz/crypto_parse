@@ -22,6 +22,7 @@ def get_selen(proxy=False):
         options.add_argument('--proxy-server=socks5://localhost:9050')
 
     options.add_argument("--disable-blink-features")
+    options.add_argument("--headless")
     options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False)
@@ -66,7 +67,7 @@ async def parse(id_, proxy=False):
     await asyncio.sleep(2)
     driver.find_element_by_class_name('coin-input').find_element_by_tag_name('input').send_keys(1)
     err = 0
-    await asyncio.sleep(2)
+    await asyncio.sleep(6)
     while True:
         try:
             price = float(driver.find_element_by_class_name('price-base').text.split('≈ ')[1].split(' ')[0])

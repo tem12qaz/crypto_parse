@@ -24,6 +24,7 @@ waiting_id = []
 
 up = 2
 lower = 1
+mute = False
 
 available_products = []
 sleep_time = 2
@@ -59,13 +60,26 @@ async def send_info(data):
         await bot.send_message(admin, text)
 
 
+async def parse_and_send(amm_id):
+    price = await parse(amm_id)
+    if price is None:
+        return
+    if price > up:
+        text = f'''Превышен верхний порог {up}
+Amm_id = {amm_id}'''
+    elif price < lower:
+        text = f'''Достигнут нижний порог {lower}
+Amm_id = {amm_id}'''
+    else:
+        return
+    if not mute:
+        await bot.send_message(admins[0], text)
+
+
 async def parse_cycle():
     while True:
-        price = await parse(id_)
-        if price:
-            print(price)
-        print('-----------')
-        await asyncio.sleep(5)
+        await parse_and_send(id_)
+        await asyncio.sleep(sleep_time)
 
 
 @dp.message_handler(commands=['start'])
@@ -78,13 +92,14 @@ async def start_command(message: types.Message):
 /lower - Установить нижний порог
 /cancel - Отменить действие
 /time - Изменить время задержки
-/id - Изменить отслеживание'''
+/id - Изменить отслеживание
+/mute - Включить/Отключить сообщения'''
 
     await message.answer(text)
 
 
 @dp.message_handler(commands=['up'])
-async def add_command(message: types.Message):
+async def up_command(message: types.Message):
     if message.from_user.id not in admins:
         return
 
@@ -95,7 +110,7 @@ async def add_command(message: types.Message):
 
 
 @dp.message_handler(commands=['lower'])
-async def del_command(message: types.Message):
+async def lower_command(message: types.Message):
     if message.from_user.id not in admins:
         return
 
@@ -117,7 +132,7 @@ async def cancel_command(message: types.Message):
 
 
 @dp.message_handler(commands=['id'])
-async def list_command(message: types.Message):
+async def id_command(message: types.Message):
     if message.from_user.id not in admins:
         return
 
@@ -136,6 +151,22 @@ async def time_command(message: types.Message):
     waiting_time.append(message.from_user.id)
     text = f'''Сейчас задержка составляет {sleep_time} секунд.
 Введите задержку в секундах:'''
+
+    await message.answer(text)
+
+
+@dp.message_handler(commands=['mute'])
+async def mute_command(message: types.Message):
+    global mute
+    if message.from_user.id not in admins:
+        return
+
+    del_actions(message.from_user.id)
+    if mute:
+        text = 'Сообщения отключены'
+    else:
+        text = 'Сообщения включены'
+    mute = not mute
 
     await message.answer(text)
 
@@ -187,7 +218,8 @@ async def listen_url(message: types.Message):
 
 async def on_startup(dp):
     await bot.set_webhook(WEBHOOK_URL)
-    await parse_cycle()
+    loop = asyncio.get_running_loop()
+    loop.create_task(parse_cycle())
 
 
 async def on_shutdown(dp):
