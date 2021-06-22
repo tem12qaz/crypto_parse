@@ -67,7 +67,7 @@ async def parse(id_, proxy=False):
     await asyncio.sleep(2)
     driver.find_element_by_class_name('coin-input').find_element_by_tag_name('input').send_keys(1)
     err = 0
-    await asyncio.sleep(6)
+    await asyncio.sleep(8)
     while True:
         try:
             price = float(driver.find_element_by_class_name('price-base').text.split('≈ ')[1].split(' ')[0])

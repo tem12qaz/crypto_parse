@@ -22,8 +22,8 @@ waiting_down = []
 waiting_time = []
 waiting_id = []
 
-up = 2
-lower = 1
+up = 2.0
+lower = 1.0
 mute = False
 
 available_products = []
@@ -42,33 +42,22 @@ def del_actions(tg_id):
     if tg_id in waiting_time:
         waiting_time.remove(tg_id)
 
-    if tg_id in waiting_time:
+    if tg_id in waiting_id:
         waiting_id.remove(tg_id)
-
-
-async def send_info(data):
-    if len(data) == 2:
-        text = f'''Товар "{data[0]}"[{data[1]}] исчез из продажи'''
-    elif len(data) == 4:
-        text = f'''Товар "{data[0]}"[{data[1]}] появился в наличии.
-Размеры: {data[2]}
-{data[3]}'''
-    else:
-        return
-
-    for admin in admins:
-        await bot.send_message(admin, text)
 
 
 async def parse_and_send(amm_id):
     price = await parse(amm_id)
     if price is None:
         return
+    print(price)
     if price > up:
         text = f'''Превышен верхний порог {up}
+Цена сейчас {price}
 Amm_id = {amm_id}'''
     elif price < lower:
         text = f'''Достигнут нижний порог {lower}
+Цена сейчас {price}
 Amm_id = {amm_id}'''
     else:
         return
@@ -162,11 +151,11 @@ async def mute_command(message: types.Message):
         return
 
     del_actions(message.from_user.id)
+    mute = not mute
     if mute:
         text = 'Сообщения отключены'
     else:
         text = 'Сообщения включены'
-    mute = not mute
 
     await message.answer(text)
 
