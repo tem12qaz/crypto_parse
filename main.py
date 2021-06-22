@@ -17,9 +17,13 @@ logger = logging.getLogger('app_logger')
 bot = Bot(token=API_TOKEN, parse_mode=types.ParseMode.HTML)
 dp = Dispatcher(bot)
 
-waiting_add = []
-waiting_del = []
+waiting_up = []
+waiting_down = []
 waiting_time = []
+waiting_id = []
+
+up = 2
+lower = 1
 
 available_products = []
 sleep_time = 2
@@ -28,14 +32,17 @@ id_ = 'AsA4HchyP9ksD9Rw7iAEdVa9hxD47RtNx1ETuySbAxdo'
 
 
 def del_actions(tg_id):
-    if tg_id in waiting_del:
-        waiting_del.remove(tg_id)
+    if tg_id in waiting_down:
+        waiting_down.remove(tg_id)
 
-    if tg_id in waiting_del:
-        waiting_add.remove(tg_id)
+    if tg_id in waiting_down:
+        waiting_up.remove(tg_id)
 
     if tg_id in waiting_time:
         waiting_time.remove(tg_id)
+
+    if tg_id in waiting_time:
+        waiting_id.remove(tg_id)
 
 
 async def send_info(data):
@@ -67,34 +74,35 @@ async def start_command(message: types.Message):
         return
 
     text = '''
-/add - Добавить url
-/del - Удалить url
+/up - Установить верхний порог
+/lower - Установить нижний порог
 /cancel - Отменить действие
-/list - Список url'''
+/time - Изменить время задержки
+/id - Изменить отслеживание'''
 
     await message.answer(text)
 
 
-@dp.message_handler(commands=['add'])
+@dp.message_handler(commands=['up'])
 async def add_command(message: types.Message):
     if message.from_user.id not in admins:
         return
 
     del_actions(message.from_user.id)
-    waiting_add.append(message.from_user.id)
+    waiting_up.append(message.from_user.id)
 
-    await message.answer('Введите url для добавления:')
+    await message.answer(f'Верхний порог {up}. Введите новый порог:')
 
 
-@dp.message_handler(commands=['del'])
+@dp.message_handler(commands=['lower'])
 async def del_command(message: types.Message):
     if message.from_user.id not in admins:
         return
 
     del_actions(message.from_user.id)
-    waiting_del.append(message.from_user.id)
+    waiting_down.append(message.from_user.id)
 
-    await message.answer('Введите url для удаления:')
+    await message.answer(f'Нижний порог {lower}. Введите новый порог:')
 
 
 @dp.message_handler(commands=['cancel'])
@@ -108,19 +116,15 @@ async def cancel_command(message: types.Message):
     await message.answer('Действие отменено')
 
 
-@dp.message_handler(commands=['list'])
+@dp.message_handler(commands=['id'])
 async def list_command(message: types.Message):
     if message.from_user.id not in admins:
         return
 
-    urls = await Url.all()
-    text = ''
+    del_actions(message.from_user.id)
+    waiting_id.append(message.from_user.id)
 
-    for url in urls:
-        row = url.id + '. ' + url.url + '/n-------------------------/n'
-        text += row
-
-    await message.answer(text)
+    await message.answer(f'Сейчас отслеживается {id_}. Введите amm_id:')
 
 
 @dp.message_handler(commands=['time'])
@@ -139,25 +143,28 @@ async def time_command(message: types.Message):
 @dp.message_handler()
 async def listen_url(message: types.Message):
     global sleep_time
+    global up
+    global lower
+    global id_
     tg_id = message.from_user.id
     if tg_id not in admins:
         return
 
-    if tg_id in waiting_add:
+    if tg_id in waiting_up:
         try:
-            await Url.create(url=message.text)
-        except Exception as e:
-            await message.answer(f'Такой url уже существует')
+            up = float(message.text)
+        except ValueError:
+            await message.delete()
         else:
-            await message.answer(f'Url добавлен')
+            await message.answer('Порог изменен')
 
-    elif tg_id in waiting_del:
+    elif tg_id in waiting_down:
         try:
-            await Url.create(url=message.text)
-        except Exception as e:
-            await message.answer('Такого url не существует')
+            lower = float(message.text)
+        except ValueError:
+            await message.delete()
         else:
-            await message.answer('Url удален')
+            await message.answer('Порог изменен')
 
     elif tg_id in waiting_time:
         try:
@@ -167,6 +174,10 @@ async def listen_url(message: types.Message):
             await message.delete()
         else:
             await message.answer('Задержка изменена')
+
+    elif tg_id in waiting_id:
+        id_ = message.text
+        await message.answer('amm_id изменен')
 
     else:
         await message.delete()
